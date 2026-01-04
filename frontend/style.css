@@ -1,27 +1,98 @@
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
-  padding: 40px;
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: #fff;
+  padding: 30px;
+  width: 360px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 
 h2 {
   margin-bottom: 20px;
+  text-align: center;
+  color: #333;
 }
 
-input, button {
-  display: block;
-  margin: 10px 0;
-  padding: 8px;
-  width: 250px;
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #667eea;
+  color: white;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.box {
-  background: white;
-  padding: 20px;
-  width: 300px;
-  border-radius: 5px;
+button:hover {
+  background: #5563c1;
+}
+
+.link {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: #667eea;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.job {
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+  background: #eee;
+  border-radius: 6px 6px 0 0;
+}
+
+.tab.active {
+  background: #667eea;
+  color: white;
+}
+
+#loginForm, #registerForm {
+  animation: fade 0.3s ease;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

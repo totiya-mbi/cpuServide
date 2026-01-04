@@ -1,65 +1,112 @@
 const API = "http://127.0.0.1:8000";
 
-// ---------- LOGIN ----------
+function saveToken(token) {
+  localStorage.setItem("token", token);
+}
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+// ---------- AUTH ----------
+function register() {
+  fetch(`${API}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
+  })
+  .then(r => r.json())
+  .then(d => alert("Registered successfully"));
+}
+
 function login() {
-  fetch(`${API}/login?username=${username.value}&password=${password.value}`, {
-    method: "POST"
+  fetch(`${API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
   })
   .then(r => r.json())
   .then(d => {
-    if (d.error) {
+    if (!d.access_token) {
       alert("Login failed");
       return;
     }
-
-    localStorage.setItem("user_id", d.user_id);
-    localStorage.setItem("role", d.role);
-
-    if (d.role === "admin") {
-      location = "admin.html";
-    } else {
-      location = "dashboard.html";
-    }
+    saveToken(d.access_token);
+    location = "dashboard.html";
   });
 }
 
 // ---------- USER ----------
 function submitJob() {
-  const uid = localStorage.getItem("user_id");
-
-  fetch(`${API}/jobs?user_id=${uid}&command=${command.value}`, {
-    method: "POST"
+  fetch(`${API}/jobs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + getToken()
+    },
+    body: JSON.stringify({
+      gpu_type: "A100",
+      gpu_count: 1,
+      estimated_hours: 2,
+      command: command.value,
+      is_sensitive: false
+    })
   })
   .then(r => r.json())
-  .then(d => {
-    output.innerText = JSON.stringify(d, null, 2);
-  });
+  .then(d => alert("Job submitted"));
 }
 
 // ---------- ADMIN ----------
 function loadJobs() {
-  fetch(`${API}/jobs`)
-    .then(r => r.json())
-    .then(data => {
-      jobs.innerHTML = "";
-      data.forEach(j => {
-        jobs.innerHTML += `
-          <div>
-            Job ${j.id} - ${j.status}
-            <button onclick="approve(${j.id})">Approve</button>
-            <button onclick="runJob(${j.id})">Run</button>
-          </div>
-        `;
-      });
+  fetch(`${API}/jobs`, {
+    headers: {
+      "Authorization": "Bearer " + getToken()
+    }
+  })
+  .then(r => r.json())
+  .then(jobs => {
+    jobsDiv.innerHTML = "";
+    jobs.forEach(j => {
+      jobsDiv.innerHTML += `
+        <div class="job">
+          <b>Job ${j.id}</b> - ${j.status}
+        </div>
+      `;
     });
+  });
+}
+function showLogin() {
+  document.getElementById("loginForm").style.display = "block";
+  document.getElementById("registerForm").style.display = "none";
+  document.querySelectorAll(".tab")[0].classList.add("active");
+  document.querySelectorAll(".tab")[1].classList.remove("active");
 }
 
-function approve(id) {
-  fetch(`${API}/admin/approve?job_id=${id}`, { method: "POST" })
-    .then(loadJobs);
+function showRegister() {
+  document.getElementById("loginForm").style.display = "none";
+  document.getElementById("registerForm").style.display = "block";
+  document.querySelectorAll(".tab")[1].classList.add("active");
+  document.querySelectorAll(".tab")[0].classList.remove("active");
 }
 
-function runJob(id) {
-  fetch(`${API}/admin/run?job_id=${id}`, { method: "POST" })
-    .then(loadJobs);
+function register() {
+  fetch(`${API}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: regUsername.value,
+      password: regPassword.value
+    })
+  })
+  .then(r => r.json())
+  .then(() => {
+    alert("Account created, please login");
+    showLogin();
+  });
 }
