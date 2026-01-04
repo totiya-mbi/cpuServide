@@ -1,0 +1,27 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  padding: 40px;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+input, button {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  width: 250px;
+}
+
+button {
+  cursor: pointer;
+}
+
+.box {
+  background: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 5px;
+}
