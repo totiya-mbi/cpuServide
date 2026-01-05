@@ -2,24 +2,26 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel</title>
+  <title>User Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="card">
-  <h2>Admin Panel</h2>
+  <h2>User Dashboard</h2>
 
-  <button onclick="loadAllJobs()">Refresh Jobs</button>
+  <input id="command" placeholder="Job command">
+  <button onclick="createJob()">Create Job</button>
 
-  <div id="jobs" style="margin-top:20px"></div>
+  <h3 style="margin-top:20px">My Jobs</h3>
+  <div id="jobs"></div>
 
   <button style="margin-top:20px;background:#999" onclick="logout()">Logout</button>
 </div>
 
 <script src="app.js"></script>
 <script>
-  loadAllJobs();
+  loadUserJobs();
 </script>
 </body>
 </html>

@@ -6,6 +6,14 @@ from sqlalchemy.orm import Session
 from backend.database import engine, get_db
 from backend import models, schemas, auth
 
+from backend.schemas import JobCreate
+from backend.auth import get_current_user
+from backend.auth import require_admin
+
+import time
+from fastapi import HTTPException
+
+
 app = FastAPI(title="GPU as a Service")
 app.add_middleware(
     CORSMiddleware,
@@ -59,3 +67,88 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
 
     return {"access_token": token, "token_type": "bearer"}
 
+
+@app.post("/jobs")
+def create_job(
+    job: JobCreate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    new_job = models.Job(
+        user_id=user["user_id"],
+        command=job.command,
+        status="PENDING"
+    )
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
+
+    return {
+        "job_id": new_job.id,
+        "status": new_job.status
+    }
+@app.get("/jobs")
+def get_jobs(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    if user["role"] == "admin":
+        return db.query(models.Job).all()
+    else:
+        return db.query(models.Job).filter(
+            models.Job.user_id == user["id"]
+        ).all()
+        
+@app.post("/admin/jobs/{job_id}/approve")
+def approve_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    job = db.query(models.Job).filter_by(id=job_id).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.status != "PENDING":
+        raise HTTPException(status_code=400, detail="Job not in PENDING state")
+
+    job.status = "APPROVED"
+    db.commit()
+
+    return {
+        "job_id": job.id,
+        "new_status": job.status
+    }
+    
+@app.post("/admin/jobs/{job_id}/run")
+def run_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    job = db.query(models.Job).filter_by(id=job_id).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.status != "APPROVED":
+        raise HTTPException(
+            status_code=400,
+            detail="Job must be APPROVED before running"
+        )
+
+    # شبیه‌سازی اجرا
+    job.status = "RUNNING"
+    db.commit()
+
+    time.sleep(3)  # شبیه‌سازی زمان اجرا (۳ ثانیه)
+
+    job.status = "COMPLETED"
+    db.commit()
+
+    return {
+        "job_id": job.id,
+        "final_status": job.status
+    }
+    
