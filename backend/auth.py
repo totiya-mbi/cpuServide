@@ -1,6 +1,8 @@
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
+import hashlib
+from fastapi import Depends, HTTPException, status
 
 SECRET_KEY = "CHANGE_ME"
 ALGORITHM = "HS256"
@@ -8,20 +10,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
-def hash_password(password: str) -> str:
-    """
-    Hash plain password using bcrypt.
-    """
-    return pwd_context.hash(password)
-
-
-def verify_password(password: str, hashed: str) -> bool:
-    """
-    Verify plain password against hashed password.
-    """
-    return pwd_context.verify(password, hashed)
-
+def normalize_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+def hash_password(password: str):
+    normalized = normalize_password(password)
+    return pwd_context.hash(normalized)
+def verify_password(plain_password, hashed_password):
+    normalized = normalize_password(plain_password)
+    return pwd_context.verify(normalized, hashed_password)
 
 def create_access_token(data: dict) -> str:
     """
@@ -33,23 +29,23 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+bearer_scheme = HTTPBearer()
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Decode JWT and return payload (user_id, role, sub).
-    """
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+):
+    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Invalid token",
         )
 
 def require_admin(user=Depends(get_current_user)):

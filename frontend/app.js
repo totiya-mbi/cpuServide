@@ -130,47 +130,79 @@ function loadUserJobs() {
 /* ======================
    ADMIN
 ====================== */
-
-function loadAllJobs() {
-  fetch(`${API}/jobs`, {
-    headers: {
-      "Authorization": "Bearer " + getToken()
-    }
-  })
-    .then(r => r.json())
-    .then(data => {
-      const div = document.getElementById("jobs");
-      div.innerHTML = "";
-
-      data.forEach(j => {
-        div.innerHTML += `
-          <div class="job">
-            <b>#${j.id}</b> | ${j.command}<br>
-            Status: <b>${j.status}</b><br>
-            <button onclick="approveJob(${j.id})">Approve</button>
-            <button onclick="runJob(${j.id})">Run</button>
-          </div>
-        `;
-      });
+async function loadAllJobs() {
+  try {
+    const res = await fetch(`${API}/jobs`, {
+      headers: { "Authorization": "Bearer " + getToken() }
     });
+
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+
+    const div = document.getElementById("jobs");
+    div.innerHTML = "";
+
+    data.forEach(j => {
+      const canApprove = j.status === "PENDING";
+      const canRun = j.status === "APPROVED";
+
+      div.innerHTML += `
+        <div class="job">
+          <b>#${j.id}</b> | ${j.command}<br>
+          Status: <b>${j.status}</b><br>
+
+      ${canApprove ? `<button onclick="approveJob(${j.id})">Approve</button>` : ""}
+      ${canRun ? `<button onclick="runJob(${j.id})">Run</button>` : ""}
+
+        </div>
+      `;
+    });
+  } catch (e) {
+    showMsg(e.message);
+  }
 }
 
-function approveJob(id) {
-  fetch(`${API}/admin/jobs/${id}/approve`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + getToken()
-    }
-  })
-    .then(() => loadAllJobs());
+async function approveJob(id) {
+  try {
+    const res = await fetch(`${API}/admin/jobs/${id}/approve`, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + getToken() }
+    });
+
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+
+    await loadAllJobs();
+  } catch (e) {
+    showMsg(e.message);
+  }
 }
 
-function runJob(id) {
-  fetch(`${API}/admin/jobs/${id}/run`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + getToken()
-    }
-  })
-    .then(() => loadAllJobs());
+async function runJob(id) {
+  try {
+    const res = await fetch(`${API}/admin/jobs/${id}/run`, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + getToken() }
+    });
+
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+
+    await loadAllJobs();
+  } catch (e) {
+    showMsg(e.message);
+  }
+}
+
+
+// Backward-compatible alias (older pages may call submitJob)
+function submitJob(){
+  return createJob();
+}
+function showMsg(text) {
+  alert(text);
+}
+
+async function safeJson(res) {
+  try { return await res.json(); } catch { return null; }
 }

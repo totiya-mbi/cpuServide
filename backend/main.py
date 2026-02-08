@@ -12,6 +12,7 @@ from backend.auth import require_admin
 
 import time
 from fastapi import HTTPException
+from fastapi.openapi.utils import get_openapi
 
 
 app = FastAPI(title="GPU as a Service")
@@ -96,7 +97,7 @@ def get_jobs(
         return db.query(models.Job).all()
     else:
         return db.query(models.Job).filter(
-            models.Job.user_id == user["id"]
+            models.Job.user_id == user["user_id"]
         ).all()
         
 @app.post("/admin/jobs/{job_id}/approve")
@@ -151,4 +152,31 @@ def run_job(
         "job_id": job.id,
         "final_status": job.status
     }
-    
+ 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+
+    # مطمئن شو components وجود دارد
+    openapi_schema.setdefault("components", {})
+    openapi_schema["components"].setdefault("securitySchemes", {})
+
+    openapi_schema["components"]["securitySchemes"]["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+    }
+
+    # امنیت پیش‌فرض برای همه endpointها
+    openapi_schema["security"] = [{"BearerAuth": []}]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
